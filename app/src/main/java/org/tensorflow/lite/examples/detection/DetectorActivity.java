@@ -87,15 +87,17 @@ import org.tensorflow.lite.examples.detection.tracking.MultiBoxTracker;
 public class DetectorActivity extends CameraActivity implements OnImageAvailableListener {
   private static final Logger LOGGER = new Logger();
 
-  private final int num=1;
+  private int num=1;
 
   //load image
 
+  private int count=1;
   private final int SELECT_PICTURE=200;
   private Button fabloadimg;
 //  private boolean LOAD_IMAGE=true;
-  int Load_targetW, Load_targetH;
-  int Load_cropW, Load_cropH;
+  private int Load_previewWidth , Load_previewHeight;
+  private int Load_targetW, Load_targetH;
+  private int Load_cropW, Load_cropH;
   // here the preview image is drawn in portrait way
   private Bitmap Load_portraitBmp = null;
   // here the face is cropped and drawn
@@ -104,6 +106,8 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
   private Bitmap Load_croppedBitmap = null;
   private Bitmap Load_cropCopyBitmap = null;
   private Bitmap Load_bitmap = null;
+  private Bitmap Load_finalBitmap = null;
+
 
   // FaceNet
 //  private static final int TF_OD_API_INPUT_SIZE = 160;
@@ -462,12 +466,16 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 //      @Override
 //      public void onClick(DialogInterface dlg, int i) {
 
-    String name ="curry";
+    String name ="curry"+num;
+    num=num+1;
+
         if (name.isEmpty()) {
           return;
         }
         detector.register(name, rec);
-        //knownFaces.put(name, rec);
+    Toast.makeText(DetectorActivity.this, "Face added", Toast.LENGTH_SHORT).show();
+
+    //knownFaces.put(name, rec);
 //        dlg.dismiss();
 //      }
 //    });
@@ -508,6 +516,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
   private void onFacesDetected(long currTimestamp, List<Face> faces, boolean add) {
 
     cropCopyBitmap = Bitmap.createBitmap(croppedBitmap);
+    ImageUtils.saveBitmap(cropCopyBitmap,"cropcopybitmap");
     final Canvas canvas = new Canvas(cropCopyBitmap);
     final Paint paint = new Paint();
     paint.setColor(Color.RED);
@@ -549,7 +558,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
     for (Face face : faces) {
 
-      LOGGER.i("FACE" + face.toString());
+//      LOGGER.i("FACE" + face.toString());
       LOGGER.i("Running detection on face " + currTimestamp);
       //results = detector.recognizeImage(croppedBitmap);
 
@@ -818,65 +827,41 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
             LOGGER.i("Image from storage is taken as an input");
 
 
-//
-//            trackingOverlay.postInvalidate();
-//
-//            // No mutex needed as this method is not reentrant.
-//            if (computingDetection) {
-//              readyForNextImage();
-//              return;
-//            }
-//            computingDetection = true;
-//
-//            LOGGER.i("Preparing image " + currTimestamp + " from storage detection in bg thread.");
-//
-//            rgbFrameBitmap.setPixels(getRgbBytes(), 0, previewWidth, 0, 0, previewWidth, previewHeight);
-//
-//            readyForNextImage();
-//
-//            final Canvas canvas = new Canvas(bitmap);
-//            canvas.drawBitmap(rgbFrameBitmap, frameToCropTransform, null);
-//
-//            // For examining the actual TF input.
-//            if (SAVE_PREVIEW_BITMAP) {
-////      ImageUtils.saveBitmap(croppedBitmap, Integer.toString(num));
-////      num=num+1;
-//            }
-
-//            SimilarityClassifier.Recognition rec;
-//
-//            Bitmap finalBitmap = bitmap.copy(Bitmap.Config.RGB_565, true);
-
-            Load_targetH=previewHeight= Load_bitmap.getHeight();
-            Load_targetW=previewWidth= Load_bitmap.getWidth();
+            Load_targetH=Load_previewHeight= Load_bitmap.getHeight();
+            Load_targetW=Load_previewWidth= Load_bitmap.getWidth();
 
             Load_cropH=(int)(Load_targetH/2.0);
             Load_cropW=(int)(Load_targetW/2.0);
+
+            LOGGER.i("width:" + Load_previewWidth+" height: "+Load_previewHeight);
+
+
+            Load_rgbFrameBitmap = Bitmap.createBitmap(Load_previewWidth, Load_previewHeight, Config.ARGB_8888);
+
+//            Load_rgbFrameBitmap.setPixels(getRgbBytes(), 0, Load_previewWidth, 0, 0, Load_previewWidth, Load_previewHeight);
+            LOGGER.i("after Loaded rgbFrameBitmap");
+//            final Canvas canvas = new Canvas(Load_bitmap);
+//            canvas.drawBitmap(Load_rgbFrameBitmap, frameToCropTransform, null);
 
             String ABC="ARGB_8888";
 
 
 
-            Load_rgbFrameBitmap = Bitmap.createBitmap(previewWidth, previewHeight, Config.ARGB_8888);
+
             Load_croppedBitmap = Bitmap.createBitmap(Load_cropW, Load_cropH, Config.ARGB_8888);
             Load_portraitBmp = Bitmap.createBitmap(Load_targetW, Load_targetH, Config.ARGB_8888);
             Load_faceBmp = Bitmap.createBitmap(TF_OD_API_INPUT_SIZE, TF_OD_API_INPUT_SIZE, Config.ARGB_8888);
 
+
+//            ImageUtils.saveBitmap(Load_bitmap,"100000" );
+//            ImageUtils.saveBitmap(Load_croppedBitmap,"20000" );
+//            ImageUtils.saveBitmap(Load_portraitBmp,"30000" );
+//            ImageUtils.saveBitmap(Load_faceBmp,"40000" );
+
             LOGGER.i("before input image");
 
-//            InputImage image = InputImage.fromBitmap(Load_bitmap, 0);
-
-//            InputImage image = null;
-//            try{
-//              image=InputImage.fromFilePath( this, selectedImageUri);
-//            } catch (IOException e){
-//              e.printStackTrace();
-//            }
-
-
-//            LOGGER.i("after input image");
-            Bitmap finalBitmap = Load_bitmap.copy(Bitmap.Config.ARGB_8888, true);
-            InputImage image = InputImage.fromBitmap(finalBitmap, 0);
+            Load_finalBitmap = Load_bitmap.copy(Bitmap.Config.ARGB_8888, true);
+            InputImage image = InputImage.fromBitmap(Load_finalBitmap, 0);
 
             LOGGER.i("after input image");
 
@@ -885,7 +870,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                     .addOnSuccessListener(new OnSuccessListener<List<Face>>() {
                       @Override
                       public void onSuccess(List<Face> faces) {
-                        LOGGER.i("agter Process(image)");
+                        LOGGER.i("after Process(image)");
 
                         if (faces.size() == 0) {
 //                          Toast.makeText(DetectorActivity.this, "no face found", Toast.LENGTH_SHORT).show();
@@ -894,7 +879,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                         else {
                           LOGGER.i("face found "+ faces.size());
 
-                          faceDetectedFromLoadedImage(faces);
+                          onfaceDetectedFromLoadedImage(currTimestamp,faces);
                         }
                       }
 
@@ -908,9 +893,12 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
     }
   }
 
-  private void faceDetectedFromLoadedImage(List<Face> faces) {
+  private void onfaceDetectedFromLoadedImage(final long currTimestamp , List<Face> faces) {
 
-    Load_cropCopyBitmap = Bitmap.createBitmap(Load_bitmap);
+
+    Load_cropCopyBitmap = Bitmap.createBitmap(Load_croppedBitmap);
+
+    ImageUtils.saveBitmap(Load_cropCopyBitmap,"50000" );
 
     final Canvas canvas = new Canvas(Load_cropCopyBitmap);
     final Paint paint = new Paint();
@@ -951,34 +939,42 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
     boolean saved = false;
 
-    for (Face face : faces) {
-
+    {
+      Face face=faces.get(0);
       LOGGER.i("FACE" + face.toString());
-//      LOGGER.i("Running detection on face " + currTimestamp);
+      LOGGER.i("Running detection on face ");
       //results = detector.recognizeImage(croppedBitmap);
 
       final RectF boundingBox = new RectF(face.getBoundingBox());
+      LOGGER.i("Bounding Box : " + boundingBox);
 
       //final boolean goodConfidence = result.getConfidence() >= minimumConfidence;
       final boolean goodConfidence = true; //face.get;
       if (boundingBox != null && goodConfidence) {
 
+        LOGGER.i("Testing");
         // maps crop coordinates to original
-        cropToFrameTransform.mapRect(boundingBox);
+//        cropToFrameTransform.mapRect(boundingBox);
 
         // maps original coordinates to portrait coordinates
         RectF faceBB = new RectF(boundingBox);
 //        transform.mapRect(faceBB);
+        LOGGER.i("Tesdting: "+ faceBB);
 
         // translates portrait to origin and scales to fit input inference size
         //cv.drawRect(faceBB, paint);
-        float sx = ((float) TF_OD_API_INPUT_SIZE) / faceBB.width();
-        float sy = ((float) TF_OD_API_INPUT_SIZE) / faceBB.height();
-        Matrix matrix = new Matrix();
-        matrix.postTranslate(-faceBB.left, -faceBB.top);
-        matrix.postScale(sx, sy);
 
-        cvFace.drawBitmap(Load_portraitBmp, matrix, null);
+        LOGGER.i("Testing: width " + faceBB.width() + " " +faceBB.height());
+
+//        float sx = ((float) TF_OD_API_INPUT_SIZE) / faceBB.width();
+//        float sy = ((float) TF_OD_API_INPUT_SIZE) / faceBB.height();
+//        Matrix matrix = new Matrix();
+//        matrix.postTranslate(-faceBB.left, -faceBB.top);
+//        matrix.postScale(sx, sy);
+
+//        cvFace.drawBitmap(Load_portraitBmp, matrix, null);
+
+        LOGGER.i("cvFace");
 
         //canvas.drawRect(faceBB, paint);
 
@@ -990,15 +986,21 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
         boolean add= true;
         if (add) {
-          crop = Bitmap.createBitmap(Load_portraitBmp,
+          crop = Bitmap.createBitmap(Load_bitmap,
                   (int) faceBB.left,
                   (int) faceBB.top,
                   (int) faceBB.width(),
                   (int) faceBB.height());
         }
 
+        LOGGER.i("Testing after creating crop");
+
+        ImageUtils.saveBitmap(crop,"currycropped");
+
+        LOGGER.i("Testing");
+
 //        final long startTime = SystemClock.uptimeMillis();
-        final List<SimilarityClassifier.Recognition> resultsAux = detector.recognizeImage(Load_faceBmp, add);
+        final List<SimilarityClassifier.Recognition> resultsAux = detector.recognizeImage(crop, add);
 //        lastProcessingTimeMs = SystemClock.uptimeMillis() - startTime;
 
         if (resultsAux.size() > 0) {
@@ -1026,21 +1028,21 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
         }
 
-//        if (getCameraFacing() == CameraCharacteristics.LENS_FACING_FRONT) {
-//
-//          // camera is frontal so the image is flipped horizontally
-//          // flips horizontally
-//          Matrix flip = new Matrix();
-//          if (sensorOrientation == 90 || sensorOrientation == 270) {
-//            flip.postScale(1, -1, previewWidth / 2.0f, previewHeight / 2.0f);
-//          }
-//          else {
-//            flip.postScale(-1, 1, previewWidth / 2.0f, previewHeight / 2.0f);
-//          }
-//          //flip.postScale(1, -1, targetW / 2.0f, targetH / 2.0f);
-//          flip.mapRect(boundingBox);
-//
-//        }
+        if (getCameraFacing() == CameraCharacteristics.LENS_FACING_FRONT) {
+
+          // camera is frontal so the image is flipped horizontally
+          // flips horizontally
+          Matrix flip = new Matrix();
+          if (sensorOrientation == 90 || sensorOrientation == 270) {
+            flip.postScale(1, -1, Load_previewWidth / 2.0f, Load_previewHeight / 2.0f);
+          }
+          else {
+            flip.postScale(-1, 1, Load_previewWidth / 2.0f, Load_previewHeight / 2.0f);
+          }
+          //flip.postScale(1, -1, targetW / 2.0f, targetH / 2.0f);
+          flip.mapRect(boundingBox);
+
+        }
 
         final SimilarityClassifier.Recognition result = new SimilarityClassifier.Recognition(
                 "0", label, confidence, boundingBox);
@@ -1053,17 +1055,18 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
       }
 
+      if (mappedRecognitions.size() > 0) {
+        LOGGER.i("Adding results");
+        SimilarityClassifier.Recognition rec = mappedRecognitions.get(0);
+        if (rec.getExtra() != null) {
+          showAddFaceDialog(rec);
+        }
 
-    }
-    if (mappedRecognitions.size() > 0) {
-      LOGGER.i("Adding results");
-      SimilarityClassifier.Recognition rec = mappedRecognitions.get(0);
-      if (rec.getExtra() != null) {
-        detector.register("Curry", rec);
-        Toast.makeText(DetectorActivity.this, "face added", Toast.LENGTH_SHORT).show();
       }
 
     }
+    Toast.makeText(DetectorActivity.this, "out of on face detected from loaded image", Toast.LENGTH_SHORT).show();
+
   }
 
 

@@ -157,7 +157,7 @@ public class MultiBoxTracker  {
 
 //      String HR =getHeartrate(recognition.title);
 
-      String HR = " 132";
+      String HR = " ";
 //      @SuppressLint("DefaultLocale")
 //      final String strConfidence =
 //              recognition.detectionConfidence < 0
