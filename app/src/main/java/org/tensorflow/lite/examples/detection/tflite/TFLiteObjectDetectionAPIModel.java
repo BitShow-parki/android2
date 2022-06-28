@@ -21,6 +21,7 @@ import android.graphics.Bitmap;
 import android.graphics.RectF;
 import android.os.Trace;
 import android.util.Pair;
+import android.widget.Toast;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;
@@ -37,6 +38,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Vector;
 import org.tensorflow.lite.Interpreter;
+import org.tensorflow.lite.examples.detection.DetectorActivity;
+import org.tensorflow.lite.examples.detection.env.ImageUtils;
 import org.tensorflow.lite.examples.detection.env.Logger;
 
 /**
@@ -94,8 +97,19 @@ public class TFLiteObjectDetectionAPIModel
   private float[][] output;
 
   private HashMap<String, Recognition> registered = new HashMap<>();
+
+  public void getDatasetSize(){
+    LOGGER.i(""+registered.size());
+  }
+
   public void register(String name, Recognition rec) {
       registered.put(name, rec);
+     LOGGER.i("size : "+registered.size());
+
+//    for(Map.Entry<String, SimilarityClassifier.Recognition> entry: registered.entrySet()){
+//      ImageUtils.saveBitmap(entry.getValue().getCrop(),entry.getKey());
+//
+//    }
   }
 
   private TFLiteObjectDetectionAPIModel() {}
