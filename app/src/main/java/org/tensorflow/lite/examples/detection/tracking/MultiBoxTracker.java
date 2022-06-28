@@ -49,6 +49,7 @@ import java.util.Queue;
 
 /** A tracker that handles non-max suppression and matches existing objects to new detections. */
 public class MultiBoxTracker  {
+  Context context1;
   private static final float TEXT_SIZE_DIP = 18;
   private static final float MIN_SIZE = 16.0f;
   private static final int[] COLORS = {
@@ -81,6 +82,7 @@ public class MultiBoxTracker  {
   private int sensorOrientation;
 
   public MultiBoxTracker(final Context context) {
+    context1=context;
     for (final int color : COLORS) {
       availableColors.add(color);
     }
@@ -155,9 +157,9 @@ public class MultiBoxTracker  {
       float cornerSize = Math.min(trackedPos.width(), trackedPos.height()) / 8.0f;
       canvas.drawRoundRect(trackedPos, cornerSize, cornerSize, boxPaint);
 
-//      String HR =getHeartrate(recognition.title);
+      String HR =getHeartrate(recognition.title);
 
-      String HR = " ";
+//      String HR = " ";
 //      @SuppressLint("DefaultLocale")
 //      final String strConfidence =
 //              recognition.detectionConfidence < 0
@@ -196,75 +198,42 @@ public class MultiBoxTracker  {
 //    return json;
 //  }
 
-//  private String getHeartrate(String title) {
+  private String getHeartrate(String title) {
+
+
+    String json=null;
+
+    try{
+
+      InputStream is = context1.getApplicationContext().getAssets().open("UserData.json");
+
+
+      int size = is.available();
+      byte[] buffer = new byte[size];
+      is.read(buffer);
+      is.close();
+
+      json = new String(buffer,"UTF-8");
+      JSONArray jsonArray = new JSONArray(json);
+
+      for(int i =0 ; i< jsonArray.length() ;++i){
+        JSONObject obj = jsonArray.getJSONObject(i);
+
+        if(obj.getString("name").equals(title)){
+          return obj.getString("heartrate");
+        }
+      }
+
+
+    }catch (IOException e){
+      e.printStackTrace();
+    } catch (JSONException e){
+      e.printStackTrace();
+    }
+
 //
-//
-//    String json=null;
-//
-//    try{
-//
-//      InputStream is = getApplicationContext().getAssets().open("UserData.json");
-//
-//
-//      int size = is.available();
-//      byte[] buffer = new byte[size];
-//      is.read(buffer);
-//      is.close();
-//
-//      json = new String(buffer,"UTF-8");
-//      JSONArray jsonArray = new JSONArray(json);
-//
-//      for(int i =0 ; i< jsonArray.length() ;++i){
-//        JSONObject obj = jsonArray.getJSONObject(i);
-//
-//        if(obj.getString("name").equals(title)){
-//          return obj.getString("heartrate");
-//        }
-//      }
-//
-//
-//    }catch (IOException e){
-//      e.printStackTrace();
-//    } catch (JSONException e){
-//      e.printStackTrace();
-//    }
-//
-////    try {
-////      JSONObject obj = new JSONObject(loadJSONFromAsset());
-////      JSONArray m_jArry = obj.getJSONArray("formules");
-////      ArrayList<HashMap<String, String>> formList = new ArrayList<HashMap<String, String>>();
-////      HashMap<String, String> m_li;
-////
-////      for (int i = 0; i < m_jArry.length(); i++) {
-////        JSONObject jo_inside = m_jArry.getJSONObject(i);
-////        Log.d("Details-->", jo_inside.getString("formule"));
-////        String formula_value = jo_inside.getString("formule");
-////        String url_value = jo_inside.getString("url");
-////
-////        //Add your values in your `ArrayList` as below:
-////        m_li = new HashMap<String, String>();
-////        m_li.put("formule", formula_value);
-////        m_li.put("url", url_value);
-////
-////        formList.add(m_li);
-////      }
-////    } catch (JSONException e) {
-////      e.printStackTrace();
-////    }
-//
-////    String jsonFileString = DataUtils.getJsonFromAssets(getApplicationContext(), "bezkoder.json");
-////    Log.i("data", jsonFileString);
-////    Gson gson = new Gson();
-////    Type listUserType = new TypeToken<List<User>>() { }.getType();
-////    List<User> users = gson.fromJson(jsonFileString, listUserType);
-////
-////
-////    for (int i = 0; i < users.size(); i++) {
-////      Log.i("data", "> Item " + i + "\n" + users.get(i));
-////    }
-//
-//    return "";
-//  }
+    return "";
+  }
 
 
   private void processResults(final List<Recognition> results) {

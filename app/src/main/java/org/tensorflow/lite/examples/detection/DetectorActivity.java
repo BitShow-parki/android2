@@ -23,6 +23,7 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
 import android.graphics.Canvas;
@@ -39,6 +40,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.SystemClock;
 import android.provider.MediaStore;
+import android.provider.OpenableColumns;
 import android.util.Log;
 import android.util.Size;
 import android.util.TypedValue;
@@ -71,6 +73,8 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+
 import org.tensorflow.lite.examples.detection.customview.OverlayView;
 import org.tensorflow.lite.examples.detection.customview.OverlayView.DrawCallback;
 import org.tensorflow.lite.examples.detection.env.BorderedText;
@@ -91,6 +95,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
   //load image
 
+  private String filename;
   private int count=1;
   private final int SELECT_PICTURE=200;
   private Button fabloadimg;
@@ -466,13 +471,18 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 //      @Override
 //      public void onClick(DialogInterface dlg, int i) {
 
-    String name ="curry"+num;
-    num=num+1;
+//    String name ="curry"+num;
+//    num=num+1;
 
-        if (name.isEmpty()) {
+        if (filename.isEmpty()) {
           return;
         }
-        detector.register(name, rec);
+
+//        ImageUtils.saveBitmap(rec.getCrop(),filename);
+
+//        detector.register(filename, rec);
+        knownFaces.put(filename,rec);
+
     Toast.makeText(DetectorActivity.this, "Face added", Toast.LENGTH_SHORT).show();
 
     //knownFaces.put(name, rec);
@@ -481,6 +491,10 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 //    });
 //    builder.setView(dialogLayout);
 //    builder.show();
+
+    for(Map.Entry<String, SimilarityClassifier.Recognition> entry: knownFaces.entrySet()){
+      detector.register(entry.getKey(),entry.getValue());
+    }
 
   }
 
@@ -516,7 +530,6 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
   private void onFacesDetected(long currTimestamp, List<Face> faces, boolean add) {
 
     cropCopyBitmap = Bitmap.createBitmap(croppedBitmap);
-    ImageUtils.saveBitmap(cropCopyBitmap,"cropcopybitmap");
     final Canvas canvas = new Canvas(cropCopyBitmap);
     final Paint paint = new Paint();
     paint.setColor(Color.RED);
@@ -593,6 +606,8 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
         Object extra = null;
         Bitmap crop = null;
 
+//        LOGGER.i("Working");
+
         if (add) {
           crop = Bitmap.createBitmap(portraitBmp,
                   (int) faceBB.left,
@@ -600,6 +615,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
                   (int) faceBB.width(),
                   (int) faceBB.height());
         }
+
 
         final long startTime = SystemClock.uptimeMillis();
         final List<SimilarityClassifier.Recognition> resultsAux = detector.recognizeImage(faceBmp, add);
@@ -810,7 +826,6 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
     final long currTimestamp = timestamp;
 
-
     if (resultCode == RESULT_OK) {
 
       // compare the resultCode with the
@@ -820,6 +835,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
         Uri selectedImageUri = data.getData();
         if (null != selectedImageUri) {
           // update the preview image in the layout
+          filename=getFileName(selectedImageUri);
           try {
             Load_bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), selectedImageUri);
 //            ImageUtils.saveBitmap(bitmap,"Curry" );
@@ -893,12 +909,14 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
     }
   }
 
-  private void onfaceDetectedFromLoadedImage(final long currTimestamp , List<Face> faces) {
+
+
+  private void onfaceDetectedFromLoadedImage( final long currTimestamp , List<Face> faces) {
 
 
     Load_cropCopyBitmap = Bitmap.createBitmap(Load_croppedBitmap);
 
-    ImageUtils.saveBitmap(Load_cropCopyBitmap,"50000" );
+//    ImageUtils.saveBitmap(Load_cropCopyBitmap,"50000" );
 
     final Canvas canvas = new Canvas(Load_cropCopyBitmap);
     final Paint paint = new Paint();
@@ -920,24 +938,24 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
     //final List<Classifier.Recognition> results = new ArrayList<>();
 
     // Note this can be done only once
-    int sourceW = Load_rgbFrameBitmap.getWidth();
-    int sourceH = Load_rgbFrameBitmap.getHeight();
-    int targetW = Load_portraitBmp.getWidth();
-    int targetH = Load_portraitBmp.getHeight();
-    Matrix transform = createTransform(
-            sourceW,
-            sourceH,
-            targetW,
-            targetH,
-            sensorOrientation);
-    final Canvas cv = new Canvas(Load_portraitBmp);
-
-    // draws the original image in portrait mode.
-    cv.drawBitmap(Load_rgbFrameBitmap, transform, null);
-
-    final Canvas cvFace = new Canvas(Load_faceBmp);
-
-    boolean saved = false;
+//    int sourceW = Load_rgbFrameBitmap.getWidth();
+//    int sourceH = Load_rgbFrameBitmap.getHeight();
+//    int targetW = Load_portraitBmp.getWidth();
+//    int targetH = Load_portraitBmp.getHeight();
+//    Matrix transform = createTransform(
+//            sourceW,
+//            sourceH,
+//            targetW,
+//            targetH,
+//            sensorOrientation);
+//    final Canvas cv = new Canvas(Load_portraitBmp);
+//
+//    // draws the original image in portrait mode.
+//    cv.drawBitmap(Load_rgbFrameBitmap, transform, null);
+//
+//    final Canvas cvFace = new Canvas(Load_faceBmp);
+//
+//    boolean saved = false;
 
     {
       Face face=faces.get(0);
@@ -995,7 +1013,6 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
         LOGGER.i("Testing after creating crop");
 
-        ImageUtils.saveBitmap(crop,"currycropped");
 
         LOGGER.i("Testing");
 
@@ -1028,21 +1045,21 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
 
         }
 
-        if (getCameraFacing() == CameraCharacteristics.LENS_FACING_FRONT) {
-
-          // camera is frontal so the image is flipped horizontally
-          // flips horizontally
-          Matrix flip = new Matrix();
-          if (sensorOrientation == 90 || sensorOrientation == 270) {
-            flip.postScale(1, -1, Load_previewWidth / 2.0f, Load_previewHeight / 2.0f);
-          }
-          else {
-            flip.postScale(-1, 1, Load_previewWidth / 2.0f, Load_previewHeight / 2.0f);
-          }
-          //flip.postScale(1, -1, targetW / 2.0f, targetH / 2.0f);
-          flip.mapRect(boundingBox);
-
-        }
+//        if (getCameraFacing() == CameraCharacteristics.LENS_FACING_FRONT) {
+//
+//          // camera is frontal so the image is flipped horizontally
+//          // flips horizontally
+//          Matrix flip = new Matrix();
+//          if (sensorOrientation == 90 || sensorOrientation == 270) {
+//            flip.postScale(1, -1, Load_previewWidth / 2.0f, Load_previewHeight / 2.0f);
+//          }
+//          else {
+//            flip.postScale(-1, 1, Load_previewWidth / 2.0f, Load_previewHeight / 2.0f);
+//          }
+//          //flip.postScale(1, -1, targetW / 2.0f, targetH / 2.0f);
+//          flip.mapRect(boundingBox);
+//
+//        }
 
         final SimilarityClassifier.Recognition result = new SimilarityClassifier.Recognition(
                 "0", label, confidence, boundingBox);
@@ -1065,10 +1082,31 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
       }
 
     }
-    Toast.makeText(DetectorActivity.this, "out of on face detected from loaded image", Toast.LENGTH_SHORT).show();
+    Toast.makeText(DetectorActivity.this, "out of on face detected from loaded image " + knownFaces.size() , Toast.LENGTH_SHORT).show();
 
   }
 
 
+  public String getFileName(Uri uri) {
+    String result = null;
+    if (uri.getScheme().equals("content")) {
+      Cursor cursor = getContentResolver().query(uri, null, null, null, null);
+      try {
+        if (cursor != null && cursor.moveToFirst()) {
+          result = cursor.getString(cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME));
+        }
+      } finally {
+        cursor.close();
+      }
+    }
+    if (result == null) {
+      result = uri.getPath();
+      int cut = result.lastIndexOf('/');
+      if (cut != -1) {
+        result = result.substring(cut + 1);
+      }
+    }
+    return result;
+  }
 
 }
